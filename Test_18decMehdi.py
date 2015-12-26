@@ -61,7 +61,7 @@ beq=ButLP(Bass,freq=400, mul=1)#eq bass
 cho2=Chorus(beq,1,0.5, mul=5)
 
 
-compb=Compress(cho2, thresh=-20, ratio=4, risetime=.01, falltime=.2, knee=0.5).mix(2).out() # compression
+compb=Mix((Compress(cho2, thresh=-20, ratio=4, risetime=.01, falltime=.2, knee=0.5)),voices=2).out() # compression
 ####################################################################
 
 #Delay + Reverb
@@ -71,9 +71,9 @@ rdly=Randi(min=.3,max=.8, freq=.2, mul=.1)
 dly=Delay(wg1f+h1+synf,delay=0.75, feedback=rdly, maxdelay=2, mul=.1)
 Rev=Freeverb(compb+synf+wg1f+h1+dly, size=[.2,.9], damp=0.70, bal=0.70, mul=0.1)
 room=Mix(Rev+dly,voices=2).out()
-
-seqdrum=Beat(time=1, taps=16, w1=100, w2=60, w3=100, poly=1).play()
-metdrum=Metro(.5).play()
+###Drum#############################################
+seqdrum=Beat(time=2, taps=16, w1=100, w2=60, w3=100, poly=1).play()
+metdrum=Metro(1).play()
 
 
 envsn = LinTable(list=[(0, 1.0), (3500, 0.0)], size=8192)
@@ -101,7 +101,43 @@ ck=Compress(sink)
 dk=Disto(ck,drive=.7,mul=1)
         
 drum=Mix(dk+csnare, voices=2)
+######################################################
+###Carillon#######################################################################
+instenv=CurveTable(list=[(1,0)], size=8192)
+ls=[]
+datnote=[72, 75,77,79,82,84,87,89,91,94,96]
+def changenvl():
+    global ls,x2,x3,x4,x5,x6,x7
+    x2=random.uniform(1000,3000)
+    x3=x2+random.uniform(300,500)
+    x4=x3+random.uniform(200,400)
+    x5=x4+random.uniform(100,350)
+    x6=x5+random.uniform(400,600)
+    x7=x6+random.uniform(500,600)
+    ls=[(0,1),(x2,0),(x3,.5),(x4,0),(x5,.25),(x6,0),(x7,.125),(8191,0)]
+    instenv.replace(ls)
+    instenv.setTension(random.uniform(-1,1))
+    instenv.setBias(random.uniform(-1,1))
+
+ptv=Pattern(changenvl,.25).play()
+
+
+iosc = Osc(table=instenv, freq=.25, mul=.5)
+datchoice=TrigChoice(input=Metro(.125).play(),choice=midiToHz(datnote))
+instcl= LFO(freq=datchoice,mul=iosc)
+hrmi1=Harmonizer(instcl, transpo=7.00,mul=1, add=0)
+hrmi2=Harmonizer(instcl, transpo=10,mul=1, add=0)
+hrmi3=Harmonizer(instcl, transpo=12,mul=1, add=0)
+rdd1=Randh(min=.3,max=.6, freq=.2)
+rdd2=Randi(min=.6, max=.95, freq=.5)
+dly2=Delay(instcl+hrmi1+hrmi2+hrmi3, delay=rdd1, feedback=rdd2, maxdelay=1, mul=1)
+verb2=Freeverb(dly2,size=.75, damp=0.50, bal=0.50, mul=.25).mix(2)
+
+
 ##########score
+
+#####################################
+
 def event_0():##bass seule
     pass
     
@@ -210,31 +246,57 @@ def event_18():
     pass
     
 def event_19():
-    Bass.stop()
-    
+    drum.out()
 def event_20():
     pass
     
-
-    
 def event_21():
     pass
-    
 def event_22():
-    pass
+    global blist, trig3 # changement de note de bass
+    blist=[36,39,41,43]
+    trig3=TrigChoice(metro, choice=(midiToHz(blist)), port=0.005)
+    Bass.setFreq(trig3)
+    synth.stop()
     
 def event_23():
-    drum.out()
+    verb2.out()
     
 def event_24():
-    pass
+    metdrum.setTime(.5)
+    seqdrum.setTime(.5)
+    
 def event_25():
+    seqdrum.setW1(30)
+    seqdrum.setW2(40)
+    seqdrum.setW3(75)
+   
+    
+def event_26():
     pass
-
+def event_27():
+    pass
+def event_28():
+    pass
+def event_29():
+    pass
+    
+def event_30():
+    pass
+    
+def event_31():
+    pass
+    
+def event_32():
+    choir.stop()
+    
+def event_33():
+    pass
+    
 
 #definition du scores et compteurs
 metpart = Metro(6).play()
-cnt = Counter(metpart, min=0, max=26)
+cnt = Counter(metpart, min=0, max=34)
 sc = Score(cnt)
 
 
