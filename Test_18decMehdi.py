@@ -47,7 +47,7 @@ comph1=Compress(shift, thresh=-70, ratio=10, risetime=.01, falltime=.2, knee=0.5
 #Section bass
 
 blist=[24,27]
-metro=Metro(.5,poly=2).play() # metro propre a la basse
+metro=Metro(.5,poly=1).play() # metro propre a la basse
 bfrq=midiToHz(blist)
 chr =random.uniform(.99,1.01)#chorus (qui en es pas vrm un, a corriger)
 envb=LinTable([(0, 0.0), (100, 1.0), (1590, 0.5096774193548387), (2395, 0.4967741935483871), (4736, 0.5032258064516129), (6491, 0.7161290322580646), (8192, 0.0)]) ##meme logique que les trigs et env pour le synth
@@ -57,11 +57,11 @@ tenv3=TrigEnv(metro, table=envb, dur=1.5, mul=.75)
 #######################################################################
 lfo = Phasor(.025, .1, .133, .1)# lfo du feedback de bass
 Bass=RCOsc(trig3, sharp=lfo, mul=tenv3)
-beq=ButLP(Bass,freq=400, mul=1)#eq bass
+beq=ButLP(Bass,freq=400, mul=6)#eq bass
 cho2=Chorus(beq,1,0.5, mul=5)
 
 
-compb=Mix((Compress(cho2, thresh=-20, ratio=4, risetime=.01, falltime=.2, knee=0.5)),voices=2).out() # compression
+compb=Mix((Compress(cho2+beq, thresh=-20, ratio=4, risetime=.01, falltime=.2, knee=0.5)),voices=2, mul=.3).out() # compression
 ####################################################################
 
 #Delay + Reverb
@@ -105,7 +105,7 @@ drum=Mix(dk+csnare, voices=2)
 ###Carillon#######################################################################
 instenv=CurveTable(list=[(1,0)], size=8192)
 ls=[]
-datnote=[72, 75,77,79,82,84,87,89,91,94,96]
+datnote=[72, 76,77,79,82,84,88,89,91,94,96]
 def changenvl():
     global ls,x2,x3,x4,x5,x6,x7
     x2=random.uniform(1000,3000)
@@ -145,10 +145,11 @@ def event_1():
     pass
 def event_2():
     global blist, trig3 # changement de note de bass
-    blist=[36,39, 48,51]
+    blist=[24,27, 36,39, 48,51]
     trig3=TrigChoice(metro, choice=(midiToHz(blist)), port=0.005)
     Bass.setFreq(trig3)
 def event_3(): # arrivee du synth
+    metro.setTime(1)
     synth.out()
     synth.play()
     print seq.taps, seq.time
@@ -157,7 +158,8 @@ def event_4():
 def event_5():
     pass
 def event_6(): #changement de pattern rythm de la melodie
-    global seq 
+    global seq
+    metro.setTime(.5)
     seq.setTaps(9)
     seq.setTime(.25)
     seq.setWeights(w1=80, w2=50, w3=30)
@@ -181,6 +183,7 @@ def event_10(): #arrivé de choir, qui sont des filtres superposé sur un bruit 
     blist=[36,39,41,48,51,53,55,58]
     trig3=TrigChoice(metro, choice=(midiToHz(blist)), port=0.05)
     Bass.setFreq(trig3)
+    metro.setTime(1)
     
     met= Metro(time=3,poly=1).play()
     rnd2=Randi(min=20, max=40, freq=.05)
@@ -214,18 +217,16 @@ def event_10(): #arrivé de choir, qui sont des filtres superposé sur un bruit 
     Rev.setInput(compb+synf+fltsx3+fltsx2+wg1f+h1+dly+flts3+flts2+flts, fadetime=.05)
     print "hello"
 def event_11():
+    
+    metro.setTime(2)
+    
+def event_12():
+    pass
+def event_13():
     synth.stop()
     synf.stop()
     wg1f.stop()
     h1.stop()
-    
-def event_12():
-    dly.setInput(choir,fadetime=0.05)
-    Rev.setInput(compb+flts2+flts3+dly+fltsx3+fltsx2+flts, fadetime=.05)
-def event_13():
-    dly.setInput(fltsx3+fltsx2+flts,fadetime=0.05)
-    Rev.setInput(compb+dly+fltsx3+fltsx2+flts, fadetime=.05)
-    
 def event_14():
     flts3.stop()
     flts2.stop()
@@ -253,16 +254,19 @@ def event_20():
 def event_21():
     pass
 def event_22():
-    global blist, trig3 # changement de note de bass
-    blist=[36,39,41,43]
+    global blist, trig3
+     # changement de note de bass
+    blist=[36,40,41,43]
     trig3=TrigChoice(metro, choice=(midiToHz(blist)), port=0.005)
     Bass.setFreq(trig3)
     synth.stop()
+    metro.setTime(1)
     
 def event_23():
     verb2.out()
-    
+    Rev.setInput(verb2+compb+synth+dly+fltsx3+fltsx2+flts, fadetime=.05)
 def event_24():
+    metro.setTime(.5)
     metdrum.setTime(.5)
     seqdrum.setTime(.5)
     
